@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime/debug"
+	"strings"
+	"time"
 
 	"deviceback/v3/internal/model"
 
@@ -17,66 +19,67 @@ const (
 
 // Client 用户连接
 type Client struct {
+	UserId string // userId
+
 	Addr          string          // 客户端地址
 	Socket        *websocket.Conn // 用户连接
 	Send          chan []byte     // 待发送的数据
-	UserId        string          // 用户Id，用户登录以后才有
 	FirstTime     uint64          // 首次连接事件
 	HeartbeatTime uint64          // 用户上次心跳时间
+	ExitC         chan struct{}   // 退出信号
+	IsOffline     bool
 }
 
 // NewClient 初始化
-func NewClient(addr string, socket *websocket.Conn, firstTime uint64) (client *Client) {
+func NewClient(addr string, socket *websocket.Conn, firstTime uint64, userId string) (client *Client) {
 	client = &Client{
 		Addr:          addr,
 		Socket:        socket,
 		Send:          make(chan []byte, 100),
+		UserId:        userId,
 		FirstTime:     firstTime,
 		HeartbeatTime: firstTime,
+		ExitC:         make(chan struct{}),
 	}
 
 	return
-}
-
-// GetKey 获取 key
-func (c *Client) GetKey() (key string) {
-	return c.UserId
 }
 
 // 读取客户端数据
 func (c *Client) Read() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("write stop", string(debug.Stack()), r)
+			fmt.Println("write panic", string(debug.Stack()), r)
 		}
 	}()
 
 	defer func() {
-		fmt.Println("读取客户端数据 关闭send", c)
-		close(c.Send)
+		fmt.Println("read协程关闭", c)
+	}()
+
+	defer func() {
+		c.Offline()
 	}()
 
 	for {
-		t, message, err := c.Socket.ReadMessage()
-		if err != nil {
-			fmt.Println("读取客户端数据 错误", c.Addr, err)
-			return
+		if c.IsOffline {
+			break
 		}
 
-		if t == websocket.CloseMessage {
-			return
+		t, message, err := c.Socket.ReadMessage()
+		if err != nil || t == websocket.CloseMessage {
+			break
 		}
-		if t == websocket.TextMessage {
-		}
-		if t == websocket.BinaryMessage {
-		}
-		if t == websocket.PingMessage {
-			_ = c.Socket.WriteMessage(websocket.PongMessage, []byte{})
+
+		// 收到ping
+		if t == websocket.TextMessage && strings.ToUpper(string(message)) == "PING" {
+			c.Heartbeat(uint64(time.Now().Unix()))
+			c.SendMsg([]byte("PONG"))
 			continue
 		}
 
 		// 处理程序
-		c.processData(message)
+		go c.processData(message)
 	}
 }
 
@@ -84,15 +87,12 @@ func (c *Client) Read() {
 func (c *Client) Write() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("write stop", string(debug.Stack()), r)
-
+			fmt.Println("write panic", string(debug.Stack()), r)
 		}
 	}()
 
 	defer func() {
-		clientManager.Unregister <- c
-		c.Socket.Close()
-		fmt.Println("Client发送数据 defer", c)
+		fmt.Println("write协程关闭", c)
 	}()
 
 	for {
@@ -102,15 +102,32 @@ func (c *Client) Write() {
 				return
 			}
 			_ = c.Socket.WriteMessage(websocket.TextMessage, message)
+		case <-c.ExitC:
+			return
 		}
 	}
 }
 
+func (c *Client) Offline() {
+	if c.IsOffline {
+		return
+	}
+
+	c.IsOffline = true
+	c.ExitC <- struct{}{}
+	// 离线并断开连接
+	clientManager.Unregister <- c
+}
+
+func (c *Client) LogoutWithMsg() {
+	PushMsg(c.UserId, model.EventLogout, nil)
+	time.Sleep(500 * time.Millisecond)
+	c.Offline()
+}
+
 // SendMsg 发送数据
 func (c *Client) SendMsg(msg []byte) {
-
 	if c == nil {
-
 		return
 	}
 
@@ -123,15 +140,9 @@ func (c *Client) SendMsg(msg []byte) {
 	c.Send <- msg
 }
 
-// close 关闭客户端连接
-func (c *Client) close() {
-	close(c.Send)
-}
-
 // 用户心跳
 func (c *Client) Heartbeat(currentTime uint64) {
 	c.HeartbeatTime = currentTime
-
 	return
 }
 
@@ -140,20 +151,6 @@ func (c *Client) IsHeartbeatTimeout(currentTime uint64) (timeout bool) {
 	if c.HeartbeatTime+heartbeatExpirationTime <= currentTime {
 		timeout = true
 	}
-
-	return
-}
-
-// 是否登录了
-func (c *Client) IsLogin() (isLogin bool) {
-
-	// 用户登录了
-	if c.UserId != "" {
-		isLogin = true
-
-		return
-	}
-
 	return
 }
 
@@ -169,8 +166,7 @@ func (c *Client) processData(message []byte) {
 
 	err := json.Unmarshal(message, &req)
 	if err != nil {
-		fmt.Println("处理数据 json Unmarshal", err)
-		c.SendMsg([]byte("数据不合法"))
+		c.SendMsg([]byte("invalid data structure"))
 		return
 	}
 
@@ -184,7 +180,6 @@ func (c *Client) processData(message []byte) {
 
 	b, err := json.Marshal(resp)
 	if err != nil {
-		fmt.Println("处理数据 json Marshal", err)
 		return
 	}
 

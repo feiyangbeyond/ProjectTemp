@@ -40,15 +40,9 @@ func (h *TestHandler) Test(c *gin.Context) {
 // ===========================  ws  ===========================================
 // ============================================================================
 
-func (h *TestHandler) Heartbeat(userId string, msg []byte) []byte {
-	return util.MakeWsResp(200, "心跳", nil)
-}
-
-func (h *TestHandler) Ping(userId string, message []byte) []byte {
-	return util.MakeWsResp(200, "pong", nil)
-}
-
 func (h *TestHandler) ConnPush(userId string, message []byte) []byte {
-	ws.PushMsg(userId, "xxx", message)
+	ws.PushMsg(userId, "push.msg", message)
+	ws.PushMsgAll("push.msg.all", message)
+
 	return util.MakeWsResp(200, "", nil)
 }

@@ -48,6 +48,16 @@ func HandleEvent(ctx *Client, event string, msg []byte) (data []byte) {
 	return
 }
 
+func PushMsgAll(event string, data []byte) {
+	msg := model.WsProto{
+		Seq:   "s2c002",
+		Event: event,
+		Data:  data,
+	}
+	r, _ := json.Marshal(msg)
+	clientManager.sendAll(r, nil)
+}
+
 func PushMsg(userId string, event string, data []byte) {
 	client := clientManager.GetUserClient(userId)
 	if client != nil {

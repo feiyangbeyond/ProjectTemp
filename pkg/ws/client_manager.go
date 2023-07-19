@@ -6,15 +6,7 @@ import (
 	"time"
 )
 
-var clientManager *ClientManager
-
-func GetClientManagerInstance() *ClientManager {
-	if clientManager == nil {
-		clientManager = NewClientManager()
-	}
-
-	return clientManager
-}
+var clientManager = NewClientManager()
 
 // ClientManager 连接管理
 type ClientManager struct {
@@ -154,38 +146,19 @@ func (manager *ClientManager) DelUsers(client *Client) (result bool) {
 }
 
 // 获取用户的key
-func (manager *ClientManager) GetUserKeys() (userKeys []string) {
-
-	userKeys = make([]string, 0)
-	manager.UserLock.RLock()
-	defer manager.UserLock.RUnlock()
-	for key := range manager.Users {
-		userKeys = append(userKeys, key)
-	}
-
-	return
-}
-
-// 获取用户的key
-func (manager *ClientManager) GetUserList(appId uint32) (userList []string) {
-
+func (manager *ClientManager) GetUserList() (userList []string) {
 	userList = make([]string, 0)
-
 	manager.UserLock.RLock()
 	defer manager.UserLock.RUnlock()
-
-	for _, v := range manager.Users {
-		userList = append(userList, v.UserId)
+	for id := range manager.Users {
+		userList = append(userList, id)
 	}
-
-	fmt.Println("GetUserList len:", len(manager.Users))
 
 	return
 }
 
-// 获取用户的key
+// 获取用户的client
 func (manager *ClientManager) GetUserClients() (clients []*Client) {
-
 	clients = make([]*Client, 0)
 	manager.UserLock.RLock()
 	defer manager.UserLock.RUnlock()
@@ -196,9 +169,8 @@ func (manager *ClientManager) GetUserClients() (clients []*Client) {
 	return
 }
 
-// 向全部成员(除了自己)发送数据
+// 向全部成员发送数据
 func (manager *ClientManager) sendAll(message []byte, ignoreClient *Client) {
-
 	clients := manager.GetUserClients()
 	for _, conn := range clients {
 		if conn != ignoreClient {
@@ -216,7 +188,7 @@ func (manager *ClientManager) ClientRegister(client *Client) {
 		manager.AddUsers(client.UserId, client)
 	}
 
-	fmt.Println("ClientRegister 用户建立连接", client.Addr)
+	fmt.Println("ClientRegister 用户建立连接", client.UserId, client.Addr)
 	// 连接成功，处理第一次连接
 	HandleEvent(client, "conn.push", nil)
 }
@@ -233,11 +205,11 @@ func (manager *ClientManager) ClientUnregister(client *Client) {
 	}
 
 	_ = client.Socket.Close()
-	fmt.Println("ClientUnregister 用户断开连接", client.Addr, client.UserId)
+	fmt.Println("客户端取消注册成功", client.Addr, client.UserId)
 }
 
 // 管道处理程序
-func (manager *ClientManager) Start() {
+func (manager *ClientManager) start() {
 	for {
 		select {
 		case conn := <-manager.Register:
@@ -264,40 +236,43 @@ func (manager *ClientManager) Start() {
 
 /**************************  manager info  ***************************************/
 
+func ClientRegister(client *Client) {
+	clientManager.Register <- client
+}
+
+func StartClientManager() {
+	clientManager.start()
+}
+
 // 获取用户所在的连接
 func GetUserClient(userId string) (client *Client) {
 	client = clientManager.GetUserClient(userId)
-
 	return
 }
 
 // 定时清理超时连接
 func ClearTimeoutConnections() {
-	currentTime := uint64(time.Now().Unix())
+	ticker := time.NewTicker(time.Minute)
+	defer func() {
+		ticker.Stop()
+	}()
 
-	clients := clientManager.GetClients()
-	for client := range clients {
-		if client.IsHeartbeatTimeout(currentTime) {
-			fmt.Println("心跳时间超时 关闭连接", client.Addr, client.UserId, client.HeartbeatTime)
-
-			client.Socket.Close()
+	for {
+		select {
+		case t := <-ticker.C:
+			clients := clientManager.GetClients()
+			for client := range clients {
+				if client.IsHeartbeatTimeout(uint64(t.Unix())) {
+					fmt.Println("心跳时间超时 关闭连接", client.Addr, client.UserId, client.HeartbeatTime)
+					client.Offline()
+				}
+			}
 		}
 	}
 }
 
 // 获取全部用户
-func GetUserList(appId uint32) (userList []string) {
-	fmt.Println("获取全部用户", appId)
-
-	userList = clientManager.GetUserList(appId)
-
+func GetUserList() (userList []string) {
+	userList = clientManager.GetUserList()
 	return
-}
-
-// 全员广播
-func AllSendMessages(userId string, data string) {
-	fmt.Println("全员广播", userId, data)
-
-	ignoreClient := clientManager.GetUserClient(userId)
-	clientManager.sendAll([]byte(data), ignoreClient)
 }
