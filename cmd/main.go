@@ -22,6 +22,7 @@ var (
 	mode       string
 	configPath string
 	port       int
+	Version    string
 )
 
 func init() {
