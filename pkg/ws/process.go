@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"sync"
 
-	"deviceback/v3/internal/model"
+	"template/internal/model"
 )
 
 type DisposeFunc func(userId string, message []byte) (data []byte)

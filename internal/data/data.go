@@ -1,18 +1,18 @@
 package data
 
 import (
-	"deviceback/v3/pkg/config"
-	"deviceback/v3/pkg/log"
+	"template/pkg/config"
+	"template/pkg/log"
 
-	mysql "deviceback/v3/pkg/gorm"
-	rds "deviceback/v3/pkg/redis"
+	mysql "template/pkg/gorm"
+	rds "template/pkg/redis"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/google/wire"
 	"gorm.io/gorm"
 )
 
-var DataProvider = wire.NewSet(NewData, NewTestRepo)
+var Provider = wire.NewSet(NewData, NewTestRepo)
 
 type Data struct {
 	Rds   *redis.Client

@@ -3,9 +3,9 @@ package data
 import (
 	"context"
 
-	"deviceback/v3/internal/model"
-	"deviceback/v3/internal/service"
-	"deviceback/v3/pkg/log"
+	"template/internal/model"
+	"template/internal/service"
+	"template/pkg/log"
 )
 
 var _ service.TestRepo = (*testRepo)(nil)

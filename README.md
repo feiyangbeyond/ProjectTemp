@@ -1,4 +1,5 @@
-# ProjectTemp
+# GoProjectTemp
+> Golang project template
 
 ## 1. Introduction
 

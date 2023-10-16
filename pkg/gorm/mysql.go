@@ -3,7 +3,7 @@ package gorm
 import (
 	"fmt"
 
-	"deviceback/v3/pkg/config"
+	"template/pkg/config"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"

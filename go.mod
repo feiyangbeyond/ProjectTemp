@@ -1,10 +1,11 @@
-module deviceback/v3
+module template
 
 go 1.20
 
 require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-redis/redis/v8 v8.11.5
+	github.com/google/uuid v1.3.1
 	github.com/google/wire v0.5.0
 	github.com/gorilla/websocket v1.5.0
 	golang.org/x/sync v0.3.0

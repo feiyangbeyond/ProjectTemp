@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"deviceback/v3/internal/model"
+	"template/internal/model"
 
 	"github.com/gorilla/websocket"
 )

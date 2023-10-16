@@ -3,10 +3,10 @@ package handler
 import (
 	"context"
 
-	"deviceback/v3/internal/service"
-	"deviceback/v3/pkg/log"
-	"deviceback/v3/pkg/util"
-	"deviceback/v3/pkg/ws"
+	"template/internal/service"
+	"template/pkg/log"
+	"template/pkg/util"
+	"template/pkg/ws"
 
 	"github.com/gin-gonic/gin"
 )

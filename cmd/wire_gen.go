@@ -7,19 +7,20 @@
 package main
 
 import (
-	"deviceback/v3/internal/data"
-	"deviceback/v3/internal/handler"
-	"deviceback/v3/internal/router"
-	"deviceback/v3/internal/service"
-	"deviceback/v3/pkg/config"
-	"deviceback/v3/pkg/log"
-	"deviceback/v3/pkg/server"
+	"template/internal/data"
+	"template/internal/handler"
+	"template/internal/router"
+	"template/internal/server/http"
+	"template/internal/service"
+	"template/pkg/app"
+	"template/pkg/config"
+	"template/pkg/log"
 )
 
 // Injectors from wire.go:
 
-func wireApp(configConfig *config.Config, logger log.Logger) (*App, func(), error) {
-	engine := server.NewEngine()
+func wireApp(configConfig *config.Config, logger log.Logger) (*app.App, func(), error) {
+	engine := http.NewEngine(configConfig, logger)
 	wsRouter := router.NewWsRouter(engine, logger)
 	dataData, cleanup, err := data.NewData(logger, configConfig)
 	if err != nil {
@@ -29,9 +30,9 @@ func wireApp(configConfig *config.Config, logger log.Logger) (*App, func(), erro
 	testService := service.NewTestService(testRepo)
 	testHandler := handler.NewTestHandler(testService, logger)
 	httpRouter := router.NewHttpRouter(engine, testHandler)
-	serverServer := server.NewServer(configConfig, engine, wsRouter, httpRouter)
-	app := newApp(logger, serverServer)
-	return app, func() {
+	server := http.NewServer(configConfig, engine, wsRouter, httpRouter)
+	appApp := newApp(logger, server)
+	return appApp, func() {
 		cleanup()
 	}, nil
 }

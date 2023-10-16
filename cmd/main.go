@@ -1,24 +1,20 @@
 package main
 
 import (
-	"context"
-	"errors"
 	"flag"
-	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
-	"deviceback/v3/pkg/config"
-	"deviceback/v3/pkg/log"
-	"deviceback/v3/pkg/server"
+	"template/internal/server/http"
+	"template/pkg/app"
+	"template/pkg/config"
+	"template/pkg/log"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/sync/errgroup"
 )
 
 var (
+	id, _      = os.Hostname() //nolint:errcheck
+	Name       string
 	mode       string
 	configPath string
 	port       int
@@ -32,42 +28,15 @@ func init() {
 	flag.Parse()
 }
 
-type App struct {
-	s *server.Server
+func newApp(logger log.Logger, h *http.Server) *app.App {
+	return app.New(
+		app.ID(id),           // app id
+		app.Name(Name),       // app name
+		app.Version(Version), // app version
+		app.Logger(logger),   // app logger
+		app.Server(h),
+	)
 }
-
-func (a *App) Stop() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	return a.s.Stop(ctx)
-}
-
-func (a *App) Run() error {
-	eg, ctx := errgroup.WithContext(context.Background())
-	eg.Go(a.s.Start)
-
-	c := make(chan os.Signal, 1)
-	// go 不允许监听 kill stop 信号
-	signal.Notify(c, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT)
-	eg.Go(func() error {
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-c:
-			return a.Stop()
-		}
-	})
-
-	if err := eg.Wait(); err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, http.ErrServerClosed) {
-		return err
-	}
-	return nil
-}
-
-func newApp(logger log.Logger, s *server.Server) *App {
-	return &App{s: s}
-}
-
 func main() {
 	gin.SetMode(mode)
 
@@ -81,14 +50,14 @@ func main() {
 		"caller", log.DefaultCaller,
 	)
 
-	app, f, err := wireApp(conf, logger)
+	a, f, err := wireApp(conf, logger)
 	if err != nil {
 		panic(err)
 	}
 
 	defer f()
 
-	err = app.Run()
+	err = a.Run()
 	if err != nil {
 		panic(err)
 	}

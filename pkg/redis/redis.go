@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"deviceback/v3/pkg/config"
+	"template/pkg/config"
 
 	"github.com/go-redis/redis/v8"
 )

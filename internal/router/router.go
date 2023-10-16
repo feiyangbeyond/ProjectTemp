@@ -4,4 +4,4 @@ import (
 	"github.com/google/wire"
 )
 
-var RouterProvider = wire.NewSet(NewHttpRouter, NewWsRouter)
+var Provider = wire.NewSet(NewHttpRouter, NewWsRouter)

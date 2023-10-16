@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"deviceback/v3/internal/model"
+	"template/internal/model"
 )
 
 type TestRepo interface {

@@ -6,17 +6,18 @@
 package main
 
 import (
-	"deviceback/v3/internal/data"
-	"deviceback/v3/internal/handler"
-	"deviceback/v3/internal/router"
-	"deviceback/v3/internal/service"
-	"deviceback/v3/pkg/config"
-	"deviceback/v3/pkg/log"
-	"deviceback/v3/pkg/server"
+	"template/internal/data"
+	"template/internal/handler"
+	"template/internal/router"
+	"template/internal/server"
+	"template/internal/service"
+	"template/pkg/app"
+	"template/pkg/config"
+	"template/pkg/log"
 
 	"github.com/google/wire"
 )
 
-func wireApp(*config.Config, log.Logger) (*App, func(), error) {
-	panic(wire.Build(server.ServerProvider, service.ServiceProvider, router.RouterProvider, handler.HandlerProvider, data.DataProvider, newApp))
+func wireApp(*config.Config, log.Logger) (*app.App, func(), error) {
+	panic(wire.Build(server.Provider, service.Provider, router.Provider, handler.Provider, data.Provider, newApp))
 }

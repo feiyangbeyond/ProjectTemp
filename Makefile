@@ -58,7 +58,7 @@ vet:
 .PHONY: build
 # build
 build:
-	mkdir -p bin/ && go build -ldflags "-s -w -X main.Version=$(VERSION)" -o ./bin/core deviceback/v3/cmd
+	mkdir -p bin/ && go build -ldflags "-s -w -X main.Version=$(VERSION)" -o ./bin/core template/cmd
 
 .PHONY: all
 # generate all

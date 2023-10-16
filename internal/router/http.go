@@ -1,7 +1,7 @@
 package router
 
 import (
-	"deviceback/v3/internal/handler"
+	"template/internal/handler"
 
 	"github.com/gin-gonic/gin"
 )

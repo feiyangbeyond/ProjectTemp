@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"time"
 
-	"deviceback/v3/internal/handler"
-	"deviceback/v3/internal/model"
-	"deviceback/v3/pkg/log"
-	"deviceback/v3/pkg/ws"
+	"template/internal/handler"
+	"template/internal/model"
+	"template/pkg/log"
+	"template/pkg/ws"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
