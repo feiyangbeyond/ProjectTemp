@@ -143,7 +143,6 @@ func (c *Client) SendMsg(msg []byte) {
 // 用户心跳
 func (c *Client) Heartbeat(currentTime uint64) {
 	c.HeartbeatTime = currentTime
-	return
 }
 
 // IsHeartbeatTimeout 心跳超时
@@ -184,6 +183,4 @@ func (c *Client) processData(message []byte) {
 	}
 
 	c.SendMsg(b)
-
-	return
 }

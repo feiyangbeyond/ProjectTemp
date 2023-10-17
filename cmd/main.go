@@ -37,6 +37,7 @@ func newApp(logger log.Logger, h *http.Server) *app.App {
 		app.Server(h),
 	)
 }
+
 func main() {
 	gin.SetMode(mode)
 

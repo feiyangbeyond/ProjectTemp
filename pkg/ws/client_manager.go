@@ -45,7 +45,6 @@ func (manager *ClientManager) InClient(client *Client) (ok bool) {
 
 // GetClients
 func (manager *ClientManager) GetClients() (clients map[*Client]bool) {
-
 	clients = make(map[*Client]bool)
 
 	manager.ClientsRange(func(client *Client, value bool) (result bool) {
@@ -59,23 +58,19 @@ func (manager *ClientManager) GetClients() (clients map[*Client]bool) {
 
 // 遍历
 func (manager *ClientManager) ClientsRange(f func(client *Client, value bool) (result bool)) {
-
 	manager.ClientsLock.RLock()
 	defer manager.ClientsLock.RUnlock()
 
 	for key, value := range manager.Clients {
 		result := f(key, value)
-		if result == false {
+		if !result {
 			return
 		}
 	}
-
-	return
 }
 
 // GetClientsLen
 func (manager *ClientManager) GetClientsLen() (clientsLen int) {
-
 	clientsLen = len(manager.Clients)
 
 	return
@@ -94,14 +89,11 @@ func (manager *ClientManager) DelClients(client *Client) {
 	manager.ClientsLock.Lock()
 	defer manager.ClientsLock.Unlock()
 
-	if _, ok := manager.Clients[client]; ok {
-		delete(manager.Clients, client)
-	}
+	delete(manager.Clients, client)
 }
 
 // 获取用户的连接
 func (manager *ClientManager) GetUserClient(userId string) (client *Client) {
-
 	manager.UserLock.RLock()
 	defer manager.UserLock.RUnlock()
 
@@ -135,7 +127,6 @@ func (manager *ClientManager) DelUsers(client *Client) (result bool) {
 	if value, ok := manager.Users[client.UserId]; ok {
 		// 判断是否为相同的用户
 		if value.Addr != client.Addr {
-
 			return
 		}
 		delete(manager.Users, client.UserId)
@@ -257,7 +248,7 @@ func ClearTimeoutConnections() {
 		ticker.Stop()
 	}()
 
-	for {
+	for { //nolint:gosimple
 		select {
 		case t := <-ticker.C:
 			clients := clientManager.GetClients()

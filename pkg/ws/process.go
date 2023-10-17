@@ -19,8 +19,6 @@ func Register(key string, value DisposeFunc) {
 	handlersRWMutex.Lock()
 	defer handlersRWMutex.Unlock()
 	handlers[key] = value
-
-	return
 }
 
 func getHandler(key string) (value DisposeFunc, ok bool) {
