@@ -14,6 +14,8 @@ import (
 	"template/pkg/middeware/cors"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 // NewEngine creates a new instance of gin.Engine.
@@ -28,8 +30,14 @@ func NewEngine(conf *config.Config, logger log.Logger) *gin.Engine {
 	// Use gin logger middleware to log every HTTP request
 	r.Use(gin.Logger())
 
+	// Use otel middleware
+	r.Use(otelgin.Middleware(""))
+
 	// Use CORS middleware to handle Cross-Origin Resource Sharing
 	r.Use(cors.Cors())
+
+	// metrics endpoint
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// Return the gin engine
 	return r

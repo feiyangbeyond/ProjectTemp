@@ -10,6 +10,7 @@ import (
 	"template/pkg/log"
 
 	"github.com/gin-gonic/gin"
+	_ "go.uber.org/automaxprocs"
 )
 
 var (
